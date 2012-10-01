@@ -1827,6 +1827,7 @@ static int msm_fb_pan_idle(struct msm_fb_data_type *mfd)
 	}
 	return ret;
 }
+<<<<<<< HEAD
 
 <<<<<<< HEAD
 >>>>>>> ace76b6... msm: display: make pan display as a non-blocking call
@@ -1834,6 +1835,10 @@ static int msm_fb_pan_idle(struct msm_fb_data_type *mfd)
 >>>>>>> ace76b6... msm: display: make pan display as a non-blocking call
 static int msm_fb_pan_display(struct fb_var_screeninfo *var,
 			      struct fb_info *info)
+=======
+static int msm_fb_pan_display_ex(struct fb_var_screeninfo *var,
+			      struct fb_info *info, u32 wait_for_finish)
+>>>>>>> 33d3bfe... msm: display: add display commit ioctl
 {
 	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)info->par;
 	struct msm_fb_backup_type *fb_backup;
@@ -1875,7 +1880,15 @@ static int msm_fb_pan_display(struct fb_var_screeninfo *var,
 	INIT_COMPLETION(mfd->commit_comp);
 	schedule_work(&mfd->commit_work);
 	mutex_unlock(&mfd->sync_mutex);
+	if (wait_for_finish)
+		msm_fb_pan_idle(mfd);
 	return ret;
+}
+
+static int msm_fb_pan_display(struct fb_var_screeninfo *var,
+			      struct fb_info *info)
+{
+	return msm_fb_pan_display_ex(var, info, TRUE);
 }
 
 static int msm_fb_pan_display_sub(struct fb_var_screeninfo *var,
@@ -3614,7 +3627,100 @@ buf_sync_err_1:
 	mutex_unlock(&mfd->sync_mutex);
 	return ret;
 }
+<<<<<<< HEAD
 >>>>>>> ace76b6... msm: display: make pan display as a non-blocking call
+=======
+
+static int buf_fence_process(struct msm_fb_data_type *mfd,
+						struct mdp_buf_fence *buf_fence)
+{
+	int i, fence_cnt = 0, ret;
+	struct sync_fence *fence;
+
+	if ((buf_fence->acq_fen_fd_cnt == 0) ||
+		(buf_fence->acq_fen_fd_cnt > MDP_MAX_FENCE_FD) ||
+		(mfd->timeline == NULL))
+		return -EINVAL;
+
+	mutex_lock(&mfd->sync_mutex);
+	for (i = 0; i < buf_fence->acq_fen_fd_cnt; i++) {
+		fence = sync_fence_fdget(buf_fence->acq_fen_fd[i]);
+		if (fence == NULL) {
+			pr_info("%s: null fence! i=%d fd=%d\n", __func__, i,
+				buf_fence->acq_fen_fd[i]);
+			ret = -EINVAL;
+			break;
+		}
+		mfd->acq_fen[i] = fence;
+	}
+	fence_cnt = i;
+	if (ret)
+		goto buf_fence_err_1;
+	mfd->cur_rel_sync_pt = sw_sync_pt_create(mfd->timeline,
+			mfd->timeline_value + 2);
+	if (mfd->cur_rel_sync_pt == NULL) {
+		pr_err("%s: cannot create sync point", __func__);
+		ret = -ENOMEM;
+		goto buf_fence_err_1;
+	}
+	/* create fence */
+	mfd->cur_rel_fence = sync_fence_create("mdp-fence",
+			mfd->cur_rel_sync_pt);
+	if (mfd->cur_rel_fence == NULL) {
+		sync_pt_free(mfd->cur_rel_sync_pt);
+		mfd->cur_rel_sync_pt = NULL;
+		pr_err("%s: cannot create fence", __func__);
+		ret = -ENOMEM;
+		goto buf_fence_err_1;
+	}
+	/* create fd */
+	mfd->cur_rel_fen_fd = get_unused_fd_flags(0);
+	sync_fence_install(mfd->cur_rel_fence, mfd->cur_rel_fen_fd);
+	buf_fence->rel_fen_fd[0] = mfd->cur_rel_fen_fd;
+	/* Only one released fd for now, -1 indicates an end */
+	buf_fence->rel_fen_fd[1] = -1;
+	mfd->acq_fen_cnt = buf_fence->acq_fen_fd_cnt;
+	mutex_unlock(&mfd->sync_mutex);
+	return ret;
+buf_fence_err_1:
+	for (i = 0; i < fence_cnt; i++)
+		sync_fence_put(mfd->acq_fen[i]);
+	mfd->acq_fen_cnt = 0;
+	mutex_unlock(&mfd->sync_mutex);
+	return ret;
+}
+static int msmfb_display_commit(struct fb_info *info,
+						unsigned long *argp)
+{
+	int ret;
+	u32 copy_back = FALSE;
+	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)info->par;
+	struct mdp_display_commit disp_commit;
+	struct mdp_buf_fence *buf_fence;
+	ret = copy_from_user(&disp_commit, argp,
+			sizeof(disp_commit));
+	if (ret) {
+		pr_err("%s:copy_from_user failed", __func__);
+		return ret;
+	}
+	buf_fence = &disp_commit.buf_fence;
+	if (buf_fence->acq_fen_fd_cnt > 0)
+		ret = buf_fence_process(mfd, buf_fence);
+	if ((!ret) && (buf_fence->rel_fen_fd[0] > 0))
+		copy_back = TRUE;
+
+	ret = msm_fb_pan_display_ex(&disp_commit.var,
+			      info, disp_commit.wait_for_finish);
+
+	if (copy_back) {
+		ret = copy_to_user(argp,
+			&disp_commit, sizeof(disp_commit));
+		if (ret)
+			pr_err("%s:copy_to_user failed", __func__);
+	}
+	return ret;
+}
+>>>>>>> 33d3bfe... msm: display: add display commit ioctl
 static int msm_fb_ioctl(struct fb_info *info, unsigned int cmd,
 			unsigned long arg)
 {
@@ -3914,6 +4020,91 @@ static int msm_fb_ioctl(struct fb_info *info, unsigned int cmd,
 		ret = msmfb_handle_pp_ioctl(mfd, &mdp_pp);
 		break;
 
+<<<<<<< HEAD
+=======
+/* add for dynamic gamma function begin*/ 
+#ifdef CONFIG_FB_DYNAMIC_GAMMA
+    case MSMFB_DYNAMIC_GAMMA:
+        /* delete the judgement is_panel_support_dynamic_gamma() */
+        ret = copy_from_user(&gamma_setting_value, argp, sizeof(gamma_setting_value));
+        if (ret)
+        {
+            printk(KERN_ERR
+                "%s:MSMFB_DYNAMIC_GAMMA ioctl failed \n",
+                 __func__);
+            return ret;
+        }
+		if(FALSE == lcd_have_resume)
+		{
+			/* backup gamma_mode that want to set */
+			last_gamma_mode = gamma_setting_value;
+			last_gamma_setting = TRUE;
+            printk(KERN_ERR
+                "%s:MSMFB_DYNAMIC_GAMMA ioctl failed \n",
+                 __func__);
+		}
+		else
+		{
+			ret = msm_fb_set_dynamic_gamma(mfd, gamma_setting_value);
+			last_gamma_setting = FALSE;
+		}
+		break;
+#endif
+#ifdef CONFIG_FB_AUTO_CABC
+    case MSMFB_AUTO_CABC:
+        /* delete the judgement is_panel_support_auto_cabc() */
+        {
+            struct msmfb_cabc_config cabc_cfg;
+
+            ret = copy_from_user(&cabc_cfg, argp, sizeof(cabc_cfg));
+            if (ret)
+            {
+                printk(KERN_ERR
+                    "%s:MSMFB_AUTO_CABC ioctl failed \n",
+                     __func__);
+                return ret;
+            }
+			if(FALSE == lcd_have_resume)
+			{
+				/* backup gamma_mode that want to set */
+				last_cabc_mode = cabc_cfg;
+				last_cabc_setting =TRUE;
+                printk(KERN_ERR
+                    "%s:MSMFB_AUTO_CABC ioctl failed \n",
+                     __func__);
+			}
+			else
+			{
+				ret = msm_fb_config_cabc(mfd, cabc_cfg);
+				last_cabc_setting =FALSE;
+			}
+
+        }
+        break;
+#endif
+
+	case MSMFB_METADATA_SET:
+		ret = copy_from_user(&mdp_metadata, argp, sizeof(mdp_metadata));
+		if (ret)
+			return ret;
+		ret = msmfb_handle_metadata_ioctl(mfd, &mdp_metadata);
+		break;
+	case MSMFB_BUFFER_SYNC:
+		ret = copy_from_user(&buf_sync, argp, sizeof(buf_sync));
+		if (ret)
+			return ret;
+
+		ret = msmfb_handle_buf_sync_ioctl(mfd, &buf_sync);
+
+		if (!ret)
+			ret = copy_to_user(argp, &buf_sync, sizeof(buf_sync));
+		break;
+
+	case MSMFB_DISPLAY_COMMIT:
+		ret = msmfb_display_commit(info, argp);
+		break;
+
+>>>>>>> 33d3bfe... msm: display: add display commit ioctl
 	default:
 		MSM_FB_INFO("MDP: unknown ioctl (cmd=%x) received!\n", cmd);
 		ret = -EINVAL;
