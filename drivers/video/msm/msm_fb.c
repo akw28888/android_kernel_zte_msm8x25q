@@ -133,6 +133,19 @@ static int mdp_bl_scale_config(struct msm_fb_data_type *mfd,
 static void msm_fb_scale_bl(__u32 *bl_lvl);
 static void msm_fb_commit_wq_handler(struct work_struct *work);
 static int msm_fb_pan_idle(struct msm_fb_data_type *mfd);
+<<<<<<< HEAD
+=======
+
+/*function declare*/
+#ifdef CONFIG_FB_AUTO_CABC
+int msm_fb_config_cabc(struct msm_fb_data_type *mfd, struct msmfb_cabc_config cabc_cfg);
+#endif
+#ifdef CONFIG_FB_DYNAMIC_GAMMA
+int msm_fb_set_dynamic_gamma(struct msm_fb_data_type *mfd, enum danymic_gamma_mode gamma_mode);
+#endif
+
+/* ɾ��˶δ��� */
+>>>>>>> ace76b6... msm: display: make pan display as a non-blocking call
 
 #ifdef MSM_FB_ENABLE_DBGFS
 
@@ -1060,6 +1073,9 @@ static int msm_fb_blank(int blank_mode, struct fb_info *info)
 		fb_notifier_call_chain(FB_EVENT_BLANK, &event);
 	}
 	msm_fb_pan_idle(mfd);
+<<<<<<< HEAD
+>>>>>>> ace76b6... msm: display: make pan display as a non-blocking call
+=======
 >>>>>>> ace76b6... msm: display: make pan display as a non-blocking call
 	return msm_fb_blank_sub(blank_mode, info, mfd->op_enable);
 }
@@ -1765,6 +1781,7 @@ int msm_fb_signal_timeline(struct msm_fb_data_type *mfd)
 DEFINE_SEMAPHORE(msm_fb_pan_sem);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 static void bl_workqueue_handler(struct work_struct *work)
 {
@@ -1791,6 +1808,8 @@ static void bl_workqueue_handler(struct work_struct *work)
 
 
 =======
+=======
+>>>>>>> ace76b6... msm: display: make pan display as a non-blocking call
 static int msm_fb_pan_idle(struct msm_fb_data_type *mfd)
 {
 	int ret = 0;
@@ -1809,6 +1828,9 @@ static int msm_fb_pan_idle(struct msm_fb_data_type *mfd)
 	return ret;
 }
 
+<<<<<<< HEAD
+>>>>>>> ace76b6... msm: display: make pan display as a non-blocking call
+=======
 >>>>>>> ace76b6... msm: display: make pan display as a non-blocking call
 static int msm_fb_pan_display(struct fb_var_screeninfo *var,
 			      struct fb_info *info)
@@ -1981,6 +2003,9 @@ static int msm_fb_pan_display_sub(struct fb_var_screeninfo *var,
 #endif
 	/* async call */
 
+<<<<<<< HEAD
+>>>>>>> ace76b6... msm: display: make pan display as a non-blocking call
+=======
 >>>>>>> ace76b6... msm: display: make pan display as a non-blocking call
 	mdp_dma_pan_update(info);
 <<<<<<< HEAD
@@ -2002,7 +2027,10 @@ static int msm_fb_pan_display_sub(struct fb_var_screeninfo *var,
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> ace76b6... msm: display: make pan display as a non-blocking call
 static void msm_fb_commit_wq_handler(struct work_struct *work)
 {
 	struct msm_fb_data_type *mfd;
@@ -2021,6 +2049,9 @@ static void msm_fb_commit_wq_handler(struct work_struct *work)
 	mutex_unlock(&mfd->sync_mutex);
 
 }
+<<<<<<< HEAD
+>>>>>>> ace76b6... msm: display: make pan display as a non-blocking call
+=======
 >>>>>>> ace76b6... msm: display: make pan display as a non-blocking call
 
 static int msm_fb_check_var(struct fb_var_screeninfo *var, struct fb_info *info)

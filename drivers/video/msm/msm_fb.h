@@ -284,6 +284,9 @@ struct msm_fb_backup_type {
 	struct fb_info info;
 	struct fb_var_screeninfo var;
 	struct msm_fb_data_type mfd;
+<<<<<<< HEAD
+>>>>>>> ace76b6... msm: display: make pan display as a non-blocking call
+=======
 >>>>>>> ace76b6... msm: display: make pan display as a non-blocking call
 };
 
