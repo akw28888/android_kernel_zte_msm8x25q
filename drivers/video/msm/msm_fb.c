@@ -3562,11 +3562,46 @@ static int msmfb_handle_pp_ioctl(struct msm_fb_data_type *mfd,
 
 	return ret;
 }
+<<<<<<< HEAD
 
 <<<<<<< HEAD
 =======
 	ret = copy_from_user(acq_fen_fd, buf_sync->acq_fen_fd,
 			buf_sync->acq_fen_fd_cnt * sizeof(int));
+=======
+static int msmfb_handle_metadata_ioctl(struct msm_fb_data_type *mfd,
+				struct msmfb_metadata *metadata_ptr)
+{
+	int ret;
+	switch (metadata_ptr->op) {
+#ifdef CONFIG_FB_MSM_MDP40
+	case metadata_op_base_blend:
+		ret = mdp4_update_base_blend(mfd,
+						&metadata_ptr->data.blend_cfg);
+		break;
+#endif
+	default:
+		pr_warn("Unsupported request to MDP META IOCTL.\n");
+		ret = -EINVAL;
+		break;
+	}
+	return ret;
+}
+static int msmfb_handle_buf_sync_ioctl(struct msm_fb_data_type *mfd,
+						struct mdp_buf_sync *buf_sync)
+{
+	int i, fence_cnt = 0, ret = 0;
+	int acq_fen_fd[MDP_MAX_FENCE_FD];
+	struct sync_fence *fence;
+
+	if ((buf_sync->acq_fen_fd_cnt > MDP_MAX_FENCE_FD) ||
+		(mfd->timeline == NULL))
+		return -EINVAL;
+
+	if (buf_sync->acq_fen_fd_cnt)
+		ret = copy_from_user(acq_fen_fd, buf_sync->acq_fen_fd,
+				buf_sync->acq_fen_fd_cnt * sizeof(int));
+>>>>>>> b050224... msm: display: buf sync enhancement
 	if (ret) {
 		pr_err("%s:copy_from_user failed", __func__);
 		return ret;
@@ -3585,6 +3620,10 @@ static int msmfb_handle_pp_ioctl(struct msm_fb_data_type *mfd,
 	fence_cnt = i;
 	if (ret)
 		goto buf_sync_err_1;
+	mfd->acq_fen_cnt = fence_cnt;
+	if (buf_sync->flags & MDP_BUF_SYNC_FLAG_WAIT) {
+		msm_fb_wait_for_fence(mfd);
+	}
 	mfd->cur_rel_sync_pt = sw_sync_pt_create(mfd->timeline,
 			mfd->timeline_value + 2);
 	if (mfd->cur_rel_sync_pt == NULL) {
@@ -3609,7 +3648,6 @@ static int msmfb_handle_pp_ioctl(struct msm_fb_data_type *mfd,
 		pr_err("%s:copy_to_user failed", __func__);
 		goto buf_sync_err_3;
 	}
-	mfd->acq_fen_cnt = buf_sync->acq_fen_fd_cnt;
 	mutex_unlock(&mfd->sync_mutex);
 	return ret;
 buf_sync_err_3:
