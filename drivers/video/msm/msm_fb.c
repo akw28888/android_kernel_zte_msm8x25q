@@ -631,6 +631,9 @@ static int msm_fb_resume_sub(struct msm_fb_data_type *mfd)
 	mfd->op_enable = mfd->suspend.op_enable;
 
 	if (mfd->suspend.panel_power_on) {
+		if (mfd->panel_driver_on == FALSE)
+			msm_fb_blank_sub(FB_BLANK_POWERDOWN, mfd->fbi,
+				      mfd->op_enable);
 		ret =
 		     msm_fb_blank_sub(FB_BLANK_UNBLANK, mfd->fbi,
 				      mfd->op_enable);
@@ -929,6 +932,7 @@ static int msm_fb_blank_sub(int blank_mode, struct fb_info *info,
 				mfd->panel_power_on = TRUE;
 				up(&mfd->sem);
 
+<<<<<<< HEAD
 /* ToDo: possible conflict with android which doesn't expect sw refresher */
 /*
 	  if (!mfd->hw_refresh)
@@ -939,6 +943,37 @@ static int msm_fb_blank_sub(int blank_mode, struct fb_info *info,
 	    }
 	  }
 */
+=======
+/* LCD resume completed ,then turn on lcd backlight */
+#ifdef CONFIG_HUAWEI_KERNEL
+				lcd_have_resume = TRUE;
+				/* Remove qcom backlight mechanism,user our own */
+				if(TRUE == last_backlight_setting)
+				{
+					msm_fb_set_backlight(mfd,last_backlight_level);
+					last_backlight_setting = FALSE;
+					printk("%s:Waiting for LCD resume ,then set backlight level=%d\n",__func__,last_backlight_level);
+				}
+#ifdef CONFIG_FB_DYNAMIC_GAMMA
+                /* delete the judgement is_panel_support_dynamic_gamma() */
+				if(TRUE == last_gamma_setting)
+				{
+					msm_fb_set_dynamic_gamma(mfd,last_gamma_mode);
+					last_gamma_setting = FALSE;
+					printk("%s:Waiting for LCD resume ,then set gamma mode =%d\n",__func__,last_gamma_mode);
+				}
+#endif
+#ifdef CONFIG_FB_AUTO_CABC
+                /* delete the judgement is_panel_support_auto_cabc() */
+				if(TRUE == last_cabc_setting)
+				{
+					msm_fb_config_cabc(mfd, last_cabc_mode);
+					last_cabc_setting =FALSE;
+					printk("%s:Waiting for LCD resume ,then set cabc mode =%d\n",__func__,last_cabc_mode.mode);
+				}
+#endif
+#endif
+>>>>>>> 914061f... msm: display: panel recovering from suspend
 			}
 		}
 		//printk( " PM_DEBUG_MXP:Exit case FB_BLANK_UNBLANK.\n");
@@ -1080,9 +1115,18 @@ static int msm_fb_blank(int blank_mode, struct fb_info *info)
 	}
 	msm_fb_pan_idle(mfd);
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> ace76b6... msm: display: make pan display as a non-blocking call
 =======
 >>>>>>> ace76b6... msm: display: make pan display as a non-blocking call
+=======
+	if (mfd->op_enable == 0) {
+		if (blank_mode == FB_BLANK_UNBLANK)
+			mfd->suspend.panel_power_on = TRUE;
+		else
+			mfd->suspend.panel_power_on = FALSE;
+	}
+>>>>>>> 914061f... msm: display: panel recovering from suspend
 	return msm_fb_blank_sub(blank_mode, info, mfd->op_enable);
 }
 
