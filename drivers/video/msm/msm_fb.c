@@ -152,6 +152,12 @@ int msm_fb_set_dynamic_gamma(struct msm_fb_data_type *mfd, enum danymic_gamma_mo
 #define MSM_FB_MAX_DBGFS 1024
 #define MAX_BACKLIGHT_BRIGHTNESS 255
 
+<<<<<<< HEAD
+=======
+/* 200 ms for time out */
+#define WAIT_FENCE_TIMEOUT 100
+
+>>>>>>> 242b1e2... msm: display: allow fb open even in suspend state
 int msm_fb_debugfs_file_index;
 struct dentry *msm_fb_debugfs_root;
 struct dentry *msm_fb_debugfs_file[MSM_FB_MAX_DBGFS];
@@ -1713,7 +1719,7 @@ static int msm_fb_open(struct fb_info *info, int user)
 			pr_debug("%s:%d no mdp_set_dma_pan_info %d\n",
 				__func__, __LINE__, info->node);
 
-		if (msm_fb_blank_sub(FB_BLANK_UNBLANK, info, mfd->op_enable)) {
+		if (msm_fb_blank_sub(FB_BLANK_UNBLANK, info, TRUE)) {
 			printk(KERN_ERR "msm_fb_open: can't turn on display!\n");
 			return -1;
 		}
@@ -1736,7 +1742,7 @@ static int msm_fb_release(struct fb_info *info, int user)
 
 	mfd->ref_cnt--;
 
-	if (!mfd->ref_cnt) {
+	if ((!mfd->ref_cnt) && (mfd->op_enable)) {
 		if ((ret =
 		     msm_fb_blank_sub(FB_BLANK_POWERDOWN, info,
 				      mfd->op_enable)) != 0) {

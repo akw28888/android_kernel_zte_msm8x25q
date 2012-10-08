@@ -262,10 +262,15 @@ static int mipi_dsi_on(struct platform_device *pdev)
 	else
 		down(&mfd->dma->mutex);
 
+<<<<<<< HEAD
 	MIPI_OUTP(MIPI_DSI_BASE + 0x00A8,0x1300);
 	mdelay(1);
 	MIPI_OUTP(MIPI_DSI_BASE + 0x00A8,0);
 	ret = panel_next_on(pdev);
+=======
+	if (mfd->op_enable)
+		ret = panel_next_on(pdev);
+>>>>>>> 242b1e2... msm: display: allow fb open even in suspend state
 
 	mipi_dsi_op_mode_config(mipi->mode);
 
