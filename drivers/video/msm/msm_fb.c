@@ -1107,12 +1107,6 @@ static int msm_fb_blank(int blank_mode, struct fb_info *info)
 <<<<<<< HEAD
 =======
 
-	if (blank_mode == FB_BLANK_POWERDOWN) {
-		struct fb_event event;
-		event.info = info;
-		event.data = &blank_mode;
-		fb_notifier_call_chain(FB_EVENT_BLANK, &event);
-	}
 	msm_fb_pan_idle(mfd);
 <<<<<<< HEAD
 <<<<<<< HEAD
